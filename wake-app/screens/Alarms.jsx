@@ -100,14 +100,13 @@ export const Alarms = ({ alarms, setAlarms, songs, setSongs }) => {
                 null,
                 function (tx, res) {
                     if (res.rows.length == 0) {
-                        console.log("amigo");
                         txn.executeSql('DROP TABLE IF EXISTS songs', [], () => { });
                         txn.executeSql('DROP TABLE IF EXISTS alarms', [], () => { });
                         txn.executeSql(
                             `CREATE TABLE IF NOT EXISTS songs (
                                 songId INTEGER PRIMARY KEY AUTOINCREMENT,
                                 songName VARCHAR(255) NOT NULL, 
-                                 songLocation VARCHAR(255) NOT NULL,
+                                songLocation VARCHAR(255) NOT NULL,
                                 songTime TIME NOT NULL
                             )`,
                             [],

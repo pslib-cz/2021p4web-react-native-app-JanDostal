@@ -45,85 +45,81 @@ export const Songs = ({ sound, songs, setSongs, setAlarms, chosenPlayingSong, se
 
     };
 
-    const addSong = async () => {
-
-        let options = {
-            type: "audio/mpeg",
-            copyToCacheDirectory: false
-        };
-
-        let originalAudio = await DocumentPicker.getDocumentAsync(options);
-        if (originalAudio.uri != null) {
-
-            let soundStatus = await sound.getStatusAsync();
-            if (soundStatus.isLoaded == true) {
-
-                setChosenPlayingSong(null);
-                await sound.unloadAsync();
-            }
-
-            await FileSystem.copyAsync({ from: originalAudio.uri, to: FileSystem.documentDirectory + originalAudio.name });
-
-            let newAudio = await FileSystem.getInfoAsync(FileSystem.documentDirectory + originalAudio.name);
-
-            let finalAudio = newAudio.uri.split("file://")[1];
-
-            let status = await sound.loadAsync({ uri: finalAudio }, { shouldPlay: false });
-
-            let audioDate = new Date(status.durationMillis);
-            let audioMinutes = audioDate.getUTCMinutes().toString();
-            let audioSeconds = audioDate.getUTCSeconds().toString();
-            let audioHours = audioDate.getUTCHours().toString();
-
-
-            if (audioMinutes.length == 1) {
-                audioMinutes = "0" + audioMinutes;
-            }
-
-            if (audioSeconds.length == 1) {
-                audioSeconds = "0" + audioSeconds;
-            }
-
-            if (audioHours.length == 1) {
-                audioHours = "0" + audioHours;
-            }
-
-            let audioTime = audioHours + ":" + audioMinutes + ":" + audioSeconds;
-
-            let inputTime = audioTime.replace(/"/g, "'");
-            let inputName = originalAudio.name.replace(/"/g, "'");
-
-            db.transaction(function (tx) {
-                tx.executeSql(
-                    "INSERT INTO songs (songName, songLocation, songTime) VALUES (?,?,?)",
-                    [inputName, finalAudio, inputTime],
-                    (tx, results) => { }
-                );
-                tx.executeSql(
-                    "SELECT `songs`.*, (SELECT COUNT(*) FROM `alarms` WHERE `alarms`.`songId` = `songs`.`songId`) AS `alarmsCount` FROM `songs` ORDER BY `songs`.`songId` DESC",
-                    null,
-                    (tx, results) => {
-                        var temp = [];
-                        for (let i = 0; i < results.rows.length; ++i)
-                            temp.push(results.rows.item(i));
-                        setSongs(temp);
-                    }
-                );
-            });
-
-            await sound.unloadAsync();
-        }
-    }
-
-
-
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={{ flex: 1, backgroundColor: 'white' }}>
                 <View style={{ flex: 1 }}>
                     <View style={styles.container}>
                         <View style={{ padding: 10, margin: 10, width: "100%" }}>
-                            <Button color="blue" title="Přidat písničku" onPress={() => { addSong(); }} />
+                            <Button color="blue" title="Přidat písničku" onPress={async () => {
+
+                                let options = {
+                                    type: "audio/mpeg",
+                                    copyToCacheDirectory: false,
+                                };
+
+                                let originalAudio = await DocumentPicker.getDocumentAsync(options);
+                                if (originalAudio.uri != null) {
+
+                                    let soundStatus = await sound.getStatusAsync();
+                                    if (soundStatus.isLoaded == true) {
+
+                                        setChosenPlayingSong(null);
+                                        await sound.unloadAsync();
+                                    }
+
+                                    await FileSystem.copyAsync({ from: originalAudio.uri, to: FileSystem.documentDirectory + originalAudio.name });
+
+                                    let newAudio = await FileSystem.getInfoAsync(FileSystem.documentDirectory + originalAudio.name);
+
+                                    let finalAudio = newAudio.uri.split("file://")[1];
+
+                                    let status = await sound.loadAsync({ uri: finalAudio }, { shouldPlay: false });
+
+                                    let audioDate = new Date(status.durationMillis);
+                                    let audioMinutes = audioDate.getUTCMinutes().toString();
+                                    let audioSeconds = audioDate.getUTCSeconds().toString();
+                                    let audioHours = audioDate.getUTCHours().toString();
+
+
+                                    if (audioMinutes.length == 1) {
+                                        audioMinutes = "0" + audioMinutes;
+                                    }
+
+                                    if (audioSeconds.length == 1) {
+                                        audioSeconds = "0" + audioSeconds;
+                                    }
+
+                                    if (audioHours.length == 1) {
+                                        audioHours = "0" + audioHours;
+                                    }
+
+                                    let audioTime = audioHours + ":" + audioMinutes + ":" + audioSeconds;
+
+                                    let inputTime = audioTime.replace(/"/g, "'");
+                                    let inputName = originalAudio.name.replace(/"/g, "'");
+
+                                    db.transaction(function (tx) {
+                                        tx.executeSql(
+                                            "INSERT INTO songs (songName, songLocation, songTime) VALUES (?,?,?)",
+                                            [inputName, finalAudio, inputTime],
+                                            (tx, results) => { }
+                                        );
+                                        tx.executeSql(
+                                            "SELECT `songs`.*, (SELECT COUNT(*) FROM `alarms` WHERE `alarms`.`songId` = `songs`.`songId`) AS `alarmsCount` FROM `songs` ORDER BY `songs`.`songId` DESC",
+                                            null,
+                                            (tx, results) => {
+                                                var temp = [];
+                                                for (let i = 0; i < results.rows.length; ++i)
+                                                    temp.push(results.rows.item(i));
+                                                setSongs(temp);
+                                            }
+                                        );
+                                    });
+
+                                    await sound.unloadAsync();
+                                }
+                            }} />
                         </View>
 
                         <FlatList
